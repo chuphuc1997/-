@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>다중 창고 재고 관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<style>
+      @keyframes highlight-fade {
+        from { background-color: rgba(59, 130, 246, 0.3); }
+        to { background-color: transparent; }
+      }
+      .highlight {
+        animation: highlight-fade 2s ease-out;
+      }
+      @keyframes quantity-increase-flash {
+        0% { background-color: rgba(16, 185, 129, 0.4); }
+        100% { background-color: transparent; }
+      }
+      .animate-increase {
+        animation: quantity-increase-flash 1.5s ease-out;
+      }
+      @keyframes quantity-decrease-flash {
+        0% { background-color: rgba(239, 68, 68, 0.4); }
+        100% { background-color: transparent; }
+      }
+      .animate-decrease {
+        animation: quantity-decrease-flash 1.5s ease-out;
+      }
+    </style>
+</head>
+  <body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
