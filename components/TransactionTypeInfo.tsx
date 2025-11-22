@@ -24,6 +24,8 @@ const TransactionTypeInfo: React.FC<TransactionTypeInfoProps> = ({ type }) => {
              return <span className="flex items-center text-sm text-cyan-600 dark:text-cyan-400"><QuickReceiveIcon className="w-5 h-5 mr-2" />빠른 입고</span>;
         case TransactionType.QUICK_SHIP:
              return <span className="flex items-center text-sm text-orange-600 dark:text-orange-400"><QuickShipIcon className="w-5 h-5 mr-2" />빠른 출고</span>;
+        case TransactionType.SHIP:
+             return <span className="flex items-center text-sm text-orange-600 dark:text-orange-400"><ArrowUpOnSquareIcon className="w-5 h-5 mr-2" />출고 (판매)</span>;
         default:
             return <span>{type}</span>;
     }
@@ -39,6 +41,7 @@ export const getTransactionTypeName = (type: TransactionType) => {
         case TransactionType.ADJUST: return '수량 조정';
         case TransactionType.QUICK_RECEIVE: return '빠른 입고';
         case TransactionType.QUICK_SHIP: return '빠른 출고';
+        case TransactionType.SHIP: return '출고 (판매)';
         default: return type;
     }
 };

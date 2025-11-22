@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { XMarkIcon } from './Icons';
 
@@ -7,15 +6,19 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md transform transition-all">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl flex flex-col transform transition-all max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex-shrink-0 flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           <button
             onClick={onClose}
@@ -25,9 +28,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             <span className="sr-only">닫기</span>
           </button>
         </div>
-        <div className="p-6">
+        <div className="flex-grow p-6 overflow-y-auto">
           {children}
         </div>
+        {footer && (
+          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

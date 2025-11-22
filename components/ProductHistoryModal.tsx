@@ -1,6 +1,5 @@
-
 import React, { useMemo } from 'react';
-import { Product, User, Warehouse } from '../types';
+import { Product, User, Warehouse, TransactionType } from '../types';
 import Modal from './Modal';
 import TransactionTypeInfo from './TransactionTypeInfo';
 
@@ -23,16 +22,23 @@ const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({ isOpen, onClo
     return [...product.quantityHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [product.quantityHistory]);
 
+  const modalFooter = (
+    <div className="flex justify-end">
+      <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+        닫기
+      </button>
+    </div>
+  );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`'${product.name}' 수량 변경 내역`}>
-      <div className="max-h-96 overflow-y-auto">
+    <Modal isOpen={isOpen} onClose={onClose} title={`'${product.name}' 수량 변경 내역`} footer={modalFooter}>
+      <div className="-m-6">
         {sortedHistory.length > 0 ? (
            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                 <tr>
-                    {['날짜', '구분', '변경 전', '변경', '변경 후', '담당자', '관련 정보'].map(header => (
-                        <th key={header} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{header}</th>
+                    {['날짜', '구분', '변경 전', '변경', '변경 후', '담당자', '관련 정보'].map((header, index) => (
+                        <th key={`${header}-${index}`} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{header}</th>
                     ))}
                 </tr>
               </thead>
@@ -40,6 +46,19 @@ const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({ isOpen, onClo
                 {sortedHistory.map(entry => {
                     const changeText = entry.quantityChange > 0 ? `+${entry.quantityChange.toLocaleString()}` : entry.quantityChange.toLocaleString();
                     const changeColor = entry.quantityChange > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+                    
+                    const relatedInfo = () => {
+                        if (!entry.relatedWarehouseId) return '-';
+                        const warehouseName = getWarehouseName(entry.relatedWarehouseId);
+                        if (entry.type === TransactionType.IN) {
+                            return <span className="text-xs">From: {warehouseName}</span>;
+                        }
+                        if (entry.type === TransactionType.OUT) {
+                            return <span className="text-xs">To: {warehouseName}</span>;
+                        }
+                        return warehouseName;
+                    };
+
                     return (
                         <tr key={entry.id}>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(entry.date).toLocaleString()}</td>
@@ -48,23 +67,18 @@ const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({ isOpen, onClo
                             <td className={`px-4 py-4 whitespace-nowrap text-sm font-semibold ${changeColor}`}>{changeText}</td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">{entry.newQuantity.toLocaleString()}</td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{getUserName(entry.userId)}</td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{entry.relatedWarehouseId ? getWarehouseName(entry.relatedWarehouseId) : '-'}</td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{relatedInfo()}</td>
                         </tr>
                     )
                 })}
               </tbody>
            </table>
         ) : (
-          <div className="text-center py-10">
+          <div className="text-center py-10 px-6">
             <p className="text-gray-500 dark:text-gray-400">이 상품에 대한 수량 변경 내역이 없습니다.</p>
           </div>
         )}
       </div>
-       <div className="mt-6 flex justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-            닫기
-          </button>
-        </div>
     </Modal>
   );
 };
