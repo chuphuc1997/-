@@ -1,118 +1,71 @@
+export type TransactionType = 'income' | 'expense';
 
-export interface QuantityHistoryEntry {
-  id: string;
-  date: string;
-  userId: string;
-  type: TransactionType;
-  quantityChange: number;
-  oldQuantity: number;
+export type ExpenseCategory =
+  | 'food'
+  | 'transport'
+  | 'housing'
+  | 'health'
+  | 'entertainment'
+  | 'shopping'
+  | 'education'
+  | 'utilities'
+  | 'work'
+  | 'other_expense';
 
-  newQuantity: number;
-  relatedWarehouseId?: string;
-}
+export type IncomeCategory =
+  | 'salary'
+  | 'investment'
+  | 'gift'
+  | 'bank_interest'
+  | 'side_income'
+  | 'other_income';
 
-export interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  category?: string;
-  quantity: number;
-  price: number;
-  minStockLevel?: number;
-  lastUpdated: string;
-  lastUpdatedBy?: string;
-  quantityHistory?: QuantityHistoryEntry[];
-  imageUrls?: string[];
-  expirationDate?: string;
-}
-
-export interface Warehouse {
-  id: string;
-  name: string;
-  location: string;
-  products: Product[];
-}
-
-export enum Role {
-  ADMIN = '총관',
-  AREA_MANAGER = '지역 관리자',
-  MANAGER = '창고 관리자',
-  STAFF = '직원',
-}
-
-export interface User {
-  id: string;
-  name: string;
-  role: Role;
-  email: string;
-  password?: string;
-  assignedWarehouseIds?: string[];
-  avatarUrl?: string;
-}
-
-export enum NotificationType {
-  LOW_STOCK = 'LOW_STOCK',
-  EXPIRING_SOON = 'EXPIRING_SOON',
-  EXPIRED = 'EXPIRED',
-}
-
-export interface BaseNotification {
-  id: string;
-  type: NotificationType;
-  productId: string;
-  productName: string;
-  warehouseId: string;
-  warehouseName: string;
-  read: boolean;
-}
-
-export interface LowStockNotification extends BaseNotification {
-  type: NotificationType.LOW_STOCK;
-  currentQuantity: number;
-  minStockLevel: number;
-}
-
-export interface ExpirationNotification extends BaseNotification {
-  type: NotificationType.EXPIRED | NotificationType.EXPIRING_SOON;
-  expirationDate: string;
-  daysRemaining: number;
-}
-
-export type AppNotification = LowStockNotification | ExpirationNotification;
-
-
-export enum TransactionType {
-  IN = 'IN',
-  OUT = 'OUT',
-  CREATE = 'CREATE',
-  DELETE = 'DELETE',
-  RECEIVE = 'RECEIVE',
-  ADJUST = 'ADJUST',
-  QUICK_RECEIVE = 'QUICK_RECEIVE',
-  QUICK_SHIP = 'QUICK_SHIP',
-  SHIP = 'SHIP',
-}
+export type Category = ExpenseCategory | IncomeCategory;
 
 export interface Transaction {
   id: string;
-  productId: string;
-  productName: string;
-  productSku: string;
-  warehouseId: string;
-  quantity: number;
   type: TransactionType;
+  amount: number;
+  category: Category;
+  description: string;
   date: string;
-  userId: string;
-  relatedWarehouseId?: string; // For IN/OUT transactions
-  totalValue?: number; // Financial value of the transaction
+  note?: string;
+  createdAt: string;
 }
 
-export interface ToastMessage {
-  id: number;
+export interface Budget {
+  id: string;
+  category: ExpenseCategory;
+  amount: number;
+  month: string;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  color: string;
+  createdAt: string;
+  icon: string;
+}
+
+export type Page = 'dashboard' | 'transactions' | 'budget' | 'calendar' | 'reports' | 'goals';
+
+export type ToastType = 'success' | 'error' | 'info';
+
+export interface Toast {
+  id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: ToastType;
 }
 
-export type ProductFilterStatus = 'all' | 'in-stock' | 'low-stock' | 'out-of-stock';
-export type ProductFilterExpiration = 'all' | 'valid' | 'expiring-soon' | 'expired';
-export type SortableProductKeys = 'name' | 'sku' | 'quantity' | 'price';
+export interface CategoryMeta {
+  label: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  textColor: string;
+}
