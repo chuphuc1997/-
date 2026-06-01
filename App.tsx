@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Transaction, Budget, SavingsGoal, Page, Toast } from './types';
-import { INITIAL_TRANSACTIONS, INITIAL_BUDGETS, INITIAL_GOALS } from './constants';
+import { Transaction, Budget, SavingsGoal, Page, Toast, UserProfile, RecurringTransaction } from './types';
+import { INITIAL_TRANSACTIONS, INITIAL_BUDGETS, INITIAL_GOALS, INITIAL_RECURRING, DEFAULT_PROFILE, THEMES } from './constants';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -10,6 +10,7 @@ import CalendarPage from './components/CalendarPage';
 import ReportsPage from './components/ReportsPage';
 import GoalsPage from './components/GoalsPage';
 import TransactionModal from './components/TransactionModal';
+import ProfileModal from './components/ProfileModal';
 import ToastContainer from './components/Toast';
 
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -36,14 +37,31 @@ const App: React.FC = () => {
   const [goals, setGoals] = useState<SavingsGoal[]>(() =>
     loadFromStorage('finance_goals', INITIAL_GOALS)
   );
+  const [profile, setProfile] = useState<UserProfile>(() =>
+    loadFromStorage('finance_profile', DEFAULT_PROFILE)
+  );
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>(() =>
+    loadFromStorage('finance_recurring', INITIAL_RECURRING)
+  );
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => { localStorage.setItem('finance_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('finance_budgets', JSON.stringify(budgets)); }, [budgets]);
   useEffect(() => { localStorage.setItem('finance_goals', JSON.stringify(goals)); }, [goals]);
+  useEffect(() => { localStorage.setItem('finance_profile', JSON.stringify(profile)); }, [profile]);
+  useEffect(() => { localStorage.setItem('finance_recurring', JSON.stringify(recurringTransactions)); }, [recurringTransactions]);
+
+  // Apply CSS theme vars whenever profile.themeColor changes
+  useEffect(() => {
+    const theme = THEMES[profile.themeColor];
+    document.documentElement.style.setProperty('--primary', theme.primary);
+    document.documentElement.style.setProperty('--primary-secondary', theme.secondary);
+    document.documentElement.style.setProperty('--primary-light', theme.light);
+  }, [profile.themeColor]);
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'success') => {
     const id = genId();
@@ -115,6 +133,59 @@ const App: React.FC = () => {
     }));
   }, [addToast]);
 
+  const handleSaveProfile = useCallback((p: UserProfile) => {
+    setProfile(p);
+    addToast('Đã cập nhật hồ sơ ✓');
+  }, [addToast]);
+
+  const handleAddRecurring = useCallback((data: Omit<RecurringTransaction, 'id' | 'createdAt'>) => {
+    const newR: RecurringTransaction = { ...data, id: genId(), createdAt: new Date().toISOString() };
+    setRecurringTransactions(prev => [...prev, newR]);
+    addToast('Đã thêm giao dịch định kỳ ✓');
+  }, [addToast]);
+
+  const handleToggleRecurring = useCallback((id: string) => {
+    setRecurringTransactions(prev => prev.map(r =>
+      r.id === id ? { ...r, active: !r.active } : r
+    ));
+  }, []);
+
+  const handleDeleteRecurring = useCallback((id: string) => {
+    setRecurringTransactions(prev => prev.filter(r => r.id !== id));
+    addToast('Đã xóa giao dịch định kỳ', 'info');
+  }, [addToast]);
+
+  const handleApplyRecurring = useCallback(() => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const pending = recurringTransactions.filter(r => r.active && r.lastApplied !== currentMonth);
+    if (pending.length === 0) return;
+
+    const newTransactions: Transaction[] = pending.map(r => {
+      const day = Math.min(r.dayOfMonth, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
+      const dateStr = `${currentMonth}-${String(day).padStart(2, '0')}`;
+      return {
+        id: genId(),
+        type: r.type,
+        amount: r.amount,
+        category: r.category,
+        description: r.description,
+        date: dateStr,
+        createdAt: new Date().toISOString(),
+      };
+    });
+
+    setTransactions(prev => [...newTransactions, ...prev]);
+    setRecurringTransactions(prev =>
+      prev.map(r => r.active && r.lastApplied !== currentMonth
+        ? { ...r, lastApplied: currentMonth }
+        : r
+      )
+    );
+    addToast(`Đã áp dụng ${pending.length} giao dịch định kỳ ✓`);
+  }, [recurringTransactions, addToast]);
+
   const openAddTransaction = useCallback(() => {
     setEditingTransaction(null);
     setShowTransactionModal(true);
@@ -123,9 +194,28 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':
-        return <Dashboard transactions={transactions} budgets={budgets} onNavigate={p => setPage(p as Page)} />;
+        return (
+          <Dashboard
+            transactions={transactions}
+            budgets={budgets}
+            onNavigate={p => setPage(p as Page)}
+            recurringTransactions={recurringTransactions}
+            onApplyRecurring={handleApplyRecurring}
+          />
+        );
       case 'transactions':
-        return <TransactionsPage transactions={transactions} onEdit={handleEditTransaction} onDelete={handleDeleteTransaction} onAdd={openAddTransaction} />;
+        return (
+          <TransactionsPage
+            transactions={transactions}
+            onEdit={handleEditTransaction}
+            onDelete={handleDeleteTransaction}
+            onAdd={openAddTransaction}
+            recurringTransactions={recurringTransactions}
+            onAddRecurring={handleAddRecurring}
+            onToggleRecurring={handleToggleRecurring}
+            onDeleteRecurring={handleDeleteRecurring}
+          />
+        );
       case 'budget':
         return <BudgetPage budgets={budgets} transactions={transactions} onSaveBudget={handleSaveBudget} onDeleteBudget={handleDeleteBudget} />;
       case 'calendar':
@@ -141,13 +231,21 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar currentPage={page} onNavigate={setPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        currentPage={page}
+        onNavigate={setPage}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        profile={profile}
+        onShowProfile={() => setShowProfileModal(true)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header
           currentPage={page}
           onMenuClick={() => setSidebarOpen(true)}
           onAddTransaction={openAddTransaction}
+          profile={profile}
         />
         <main className="flex-1 overflow-y-auto">
           {renderPage()}
@@ -159,6 +257,14 @@ const App: React.FC = () => {
           transaction={editingTransaction}
           onSave={handleSaveTransaction}
           onClose={() => { setShowTransactionModal(false); setEditingTransaction(null); }}
+        />
+      )}
+
+      {showProfileModal && (
+        <ProfileModal
+          profile={profile}
+          onSave={handleSaveProfile}
+          onClose={() => setShowProfileModal(false)}
         />
       )}
 

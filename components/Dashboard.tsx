@@ -1,22 +1,43 @@
 import React, { useMemo } from 'react';
-import { Transaction, Budget } from '../types';
+import { Transaction, Budget, RecurringTransaction } from '../types';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, formatVND, formatShortVND } from '../constants';
 
 interface Props {
   transactions: Transaction[];
   budgets: Budget[];
   onNavigate: (page: string) => void;
+  recurringTransactions: RecurringTransaction[];
+  onApplyRecurring: () => void;
 }
 
-const StatCard: React.FC<{
-  label: string; value: string; sub?: string; icon: string;
-  gradient: string; textColor: string;
-}> = ({ label, value, sub, icon, gradient, textColor }) => (
+interface StatCardProps {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: string;
+  gradient: string;
+  pctChange?: number | null; // null means no previous data
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, sub, icon, gradient, pctChange }) => (
   <div className={`rounded-2xl p-5 text-white shadow-lg ${gradient} relative overflow-hidden`}>
     <div className="absolute top-3 right-4 text-3xl opacity-20">{icon}</div>
     <p className="text-sm font-medium opacity-80 mb-1">{label}</p>
     <p className="text-2xl font-bold truncate">{value}</p>
     {sub && <p className="text-xs opacity-70 mt-1">{sub}</p>}
+    {pctChange !== undefined && (
+      <div className="mt-2">
+        {pctChange === null ? (
+          <span className="text-xs opacity-60">– vs tháng trước</span>
+        ) : pctChange === 0 ? (
+          <span className="text-xs opacity-70">= vs tháng trước</span>
+        ) : pctChange > 0 ? (
+          <span className="text-xs font-semibold" style={{ color: '#86efac' }}>↑ {Math.abs(pctChange)}% vs tháng trước</span>
+        ) : (
+          <span className="text-xs font-semibold" style={{ color: '#fca5a5' }}>↓ {Math.abs(pctChange)}% vs tháng trước</span>
+        )}
+      </div>
+    )}
   </div>
 );
 
@@ -98,19 +119,48 @@ const BarChart: React.FC<{ data: { label: string; income: number; expense: numbe
   );
 };
 
-const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
+const calcPctChange = (current: number, previous: number): number | null => {
+  if (previous === 0) return null;
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return pct;
+};
+
+const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate, recurringTransactions, onApplyRecurring }) => {
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  // Previous month
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
 
   const monthTxs = useMemo(() =>
     transactions.filter(t => t.date.startsWith(currentMonth)),
     [transactions, currentMonth]
   );
 
+  const prevMonthTxs = useMemo(() =>
+    transactions.filter(t => t.date.startsWith(prevMonth)),
+    [transactions, prevMonth]
+  );
+
   const totalIncome = useMemo(() => monthTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0), [monthTxs]);
   const totalExpense = useMemo(() => monthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), [monthTxs]);
   const balance = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(0) : '0';
+
+  const prevIncome = useMemo(() => prevMonthTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0), [prevMonthTxs]);
+  const prevExpense = useMemo(() => prevMonthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), [prevMonthTxs]);
+  const prevBalance = prevIncome - prevExpense;
+  const prevSavingsRate = prevIncome > 0 ? (prevBalance / prevIncome) * 100 : 0;
+
+  const hasPrevData = prevIncome > 0 || prevExpense > 0;
+
+  const balancePct = hasPrevData ? calcPctChange(balance, prevBalance) : null;
+  const incomePct = hasPrevData ? calcPctChange(totalIncome, prevIncome) : null;
+  const expensePct = hasPrevData ? calcPctChange(totalExpense, prevExpense) : null;
+  const savingsRatePct = hasPrevData && prevSavingsRate !== 0
+    ? calcPctChange(Number(savingsRate), Math.round(prevSavingsRate))
+    : null;
 
   const expenseByCategory = useMemo(() => {
     const map: Record<string, number> = {};
@@ -147,8 +197,31 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
     [transactions]
   );
 
+  // Pending recurring
+  const pendingRecurring = recurringTransactions.filter(r => r.active && r.lastApplied !== currentMonth);
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Recurring banner */}
+      {pendingRecurring.length > 0 && (
+        <div className="rounded-2xl p-4 flex items-center gap-3 text-white shadow-md" style={{ background: 'var(--primary)' }}>
+          <span className="text-2xl flex-shrink-0">🔄</span>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Giao dịch định kỳ chờ áp dụng</p>
+            <p className="text-xs opacity-80 mt-0.5">
+              Bạn có {pendingRecurring.length} giao dịch định kỳ chưa được áp dụng tháng này
+            </p>
+          </div>
+          <button
+            onClick={onApplyRecurring}
+            className="px-4 py-2 rounded-xl bg-white font-semibold text-sm transition-all hover:opacity-90 flex-shrink-0"
+            style={{ color: 'var(--primary)' }}
+          >
+            Áp dụng tất cả
+          </button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -157,7 +230,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
           sub={balance >= 0 ? 'Dương 😊' : 'Âm ⚠️'}
           icon="💳"
           gradient={balance >= 0 ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-red-500 to-rose-600'}
-          textColor="text-white"
+          pctChange={balancePct}
         />
         <StatCard
           label="Thu nhập"
@@ -165,7 +238,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
           sub={`${monthTxs.filter(t => t.type === 'income').length} giao dịch`}
           icon="💰"
           gradient="bg-gradient-to-br from-emerald-500 to-green-600"
-          textColor="text-white"
+          pctChange={incomePct}
         />
         <StatCard
           label="Chi tiêu"
@@ -173,7 +246,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
           sub={`${monthTxs.filter(t => t.type === 'expense').length} giao dịch`}
           icon="💸"
           gradient="bg-gradient-to-br from-rose-500 to-pink-600"
-          textColor="text-white"
+          pctChange={expensePct}
         />
         <StatCard
           label="Tỷ lệ tiết kiệm"
@@ -181,7 +254,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
           sub={balance >= 0 ? formatShortVND(balance) + ' tiết kiệm' : 'Vượt ngân sách!'}
           icon="🎯"
           gradient="bg-gradient-to-br from-amber-500 to-orange-600"
-          textColor="text-white"
+          pctChange={savingsRatePct}
         />
       </div>
 
@@ -238,7 +311,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-900">Tiến độ ngân sách</h3>
-            <button onClick={() => onNavigate('budget')} className="text-xs text-indigo-600 font-semibold hover:text-indigo-800">Xem tất cả →</button>
+            <button onClick={() => onNavigate('budget')} className="text-xs font-semibold hover:opacity-70" style={{ color: 'var(--primary)' }}>Xem tất cả →</button>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             {currentBudgets.slice(0, 6).map(b => {
@@ -274,7 +347,7 @@ const Dashboard: React.FC<Props> = ({ transactions, budgets, onNavigate }) => {
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900">Giao dịch gần đây</h3>
-          <button onClick={() => onNavigate('transactions')} className="text-xs text-indigo-600 font-semibold hover:text-indigo-800">Xem tất cả →</button>
+          <button onClick={() => onNavigate('transactions')} className="text-xs font-semibold hover:opacity-70" style={{ color: 'var(--primary)' }}>Xem tất cả →</button>
         </div>
         <div className="space-y-3">
           {recentTxs.length === 0 ? (

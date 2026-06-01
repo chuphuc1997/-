@@ -205,7 +205,7 @@ const BudgetPage: React.FC<Props> = ({ budgets, transactions, onSaveBudget, onDe
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setEditing(null)} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold">Hủy</button>
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Lưu</button>
+                <button type="submit" className="flex-1 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-all" style={{ background: 'var(--primary)' }}>Lưu</button>
               </div>
             </form>
           </div>

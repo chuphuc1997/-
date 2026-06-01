@@ -87,7 +87,7 @@ const GoalsPage: React.FC<Props> = ({ goals, onSave, onDelete, onUpdateAmount })
           <p className="text-5xl mb-3">🎯</p>
           <p className="font-bold text-gray-900 text-lg mb-1">Chưa có mục tiêu nào</p>
           <p className="text-gray-500 text-sm mb-5">Đặt mục tiêu tiết kiệm để định hướng tài chính</p>
-          <button onClick={() => setShowModal(true)} className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors">
+          <button onClick={() => setShowModal(true)} className="px-6 py-3 text-white rounded-xl font-semibold transition-all hover:opacity-90" style={{ background: 'var(--primary)' }}>
             + Thêm mục tiêu đầu tiên
           </button>
         </div>
@@ -280,7 +280,7 @@ const GoalsPage: React.FC<Props> = ({ goals, onSave, onDelete, onUpdateAmount })
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold">Hủy</button>
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Tạo mục tiêu</button>
+                <button type="submit" className="flex-1 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-all" style={{ background: 'var(--primary)' }}>Tạo mục tiêu</button>
               </div>
             </form>
           </div>

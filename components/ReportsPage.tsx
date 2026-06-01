@@ -6,6 +6,32 @@ interface Props {
   transactions: Transaction[];
 }
 
+const exportToCSV = (transactions: Transaction[]) => {
+  const header = 'Ngày,Loại,Danh mục,Mô tả,Số tiền (VND),Ghi chú';
+  const rows = [...transactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(t => {
+      const cats = t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+      const meta = cats[t.category as keyof typeof cats];
+      return [
+        t.date,
+        t.type === 'income' ? 'Thu nhập' : 'Chi tiêu',
+        meta?.label ?? t.category,
+        `"${t.description}"`,
+        t.amount,
+        `"${t.note ?? ''}"`,
+      ].join(',');
+    });
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finance-export-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const ReportsPage: React.FC<Props> = ({ transactions }) => {
   const [year, setYear] = useState(new Date().getFullYear());
 
@@ -57,7 +83,7 @@ const ReportsPage: React.FC<Props> = ({ transactions }) => {
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      {/* Year selector */}
+      {/* Year selector + Export */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => setYear(y => y - 1)} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
@@ -72,15 +98,28 @@ const ReportsPage: React.FC<Props> = ({ transactions }) => {
             </svg>
           </button>
         </div>
-        <div className="flex gap-4 text-sm">
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Tổng thu {year}</p>
-            <p className="font-bold text-emerald-600">{formatShortVND(yearIncome)}</p>
+        <div className="flex items-center gap-4">
+          <div className="flex gap-4 text-sm">
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Tổng thu {year}</p>
+              <p className="font-bold text-emerald-600">{formatShortVND(yearIncome)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Tổng chi {year}</p>
+              <p className="font-bold text-rose-600">{formatShortVND(yearExpense)}</p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Tổng chi {year}</p>
-            <p className="font-bold text-rose-600">{formatShortVND(yearExpense)}</p>
-          </div>
+          <button
+            onClick={() => exportToCSV(transactions)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-md transition-all hover:opacity-90"
+            style={{ background: 'var(--primary)' }}
+            title="Xuất tất cả giao dịch ra CSV"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span className="hidden sm:inline">Xuất CSV</span>
+          </button>
         </div>
       </div>
 
@@ -190,7 +229,7 @@ const ReportsPage: React.FC<Props> = ({ transactions }) => {
               <th className="text-left pb-2 font-semibold">Tháng</th>
               <th className="text-right pb-2 font-semibold text-emerald-600">Thu nhập</th>
               <th className="text-right pb-2 font-semibold text-rose-600">Chi tiêu</th>
-              <th className="text-right pb-2 font-semibold text-indigo-600">Số dư</th>
+              <th className="text-right pb-2 font-semibold" style={{ color: 'var(--primary)' }}>Số dư</th>
               <th className="text-right pb-2 font-semibold text-gray-500">Tiết kiệm</th>
             </tr>
           </thead>
@@ -203,7 +242,7 @@ const ReportsPage: React.FC<Props> = ({ transactions }) => {
                   <td className="py-2.5 font-medium text-gray-700">{MONTH_NAMES_VI[i]}</td>
                   <td className="text-right py-2.5 text-emerald-600 font-medium">{d.income > 0 ? formatShortVND(d.income) : '-'}</td>
                   <td className="text-right py-2.5 text-rose-600 font-medium">{d.expense > 0 ? formatShortVND(d.expense) : '-'}</td>
-                  <td className={`text-right py-2.5 font-bold ${d.balance >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+                  <td className={`text-right py-2.5 font-bold ${d.balance >= 0 ? '' : 'text-red-600'}`} style={d.balance >= 0 ? { color: 'var(--primary)' } : undefined}>
                     {hasData ? (d.balance >= 0 ? '+' : '') + formatShortVND(d.balance) : '-'}
                   </td>
                   <td className="text-right py-2.5 text-gray-500">
@@ -218,7 +257,7 @@ const ReportsPage: React.FC<Props> = ({ transactions }) => {
               <td className="py-2.5 text-gray-800">Cả năm {year}</td>
               <td className="text-right py-2.5 text-emerald-600">{formatShortVND(yearIncome)}</td>
               <td className="text-right py-2.5 text-rose-600">{formatShortVND(yearExpense)}</td>
-              <td className={`text-right py-2.5 ${yearIncome - yearExpense >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+              <td className={`text-right py-2.5 ${yearIncome - yearExpense >= 0 ? '' : 'text-red-600'}`} style={yearIncome - yearExpense >= 0 ? { color: 'var(--primary)' } : undefined}>
                 {yearIncome > 0 || yearExpense > 0 ? (yearIncome - yearExpense >= 0 ? '+' : '') + formatShortVND(yearIncome - yearExpense) : '-'}
               </td>
               <td className="text-right py-2.5 text-gray-500">

@@ -87,7 +87,8 @@ const TransactionModal: React.FC<Props> = ({ transaction, onSave, onClose }) => 
                 value={displayAmount}
                 onChange={e => handleAmountChange(e.target.value.replace(/\./g, '').replace(/,/g, ''))}
                 placeholder="0"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent pr-12"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent pr-12"
+                style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">₫</span>
             </div>
@@ -104,9 +105,10 @@ const TransactionModal: React.FC<Props> = ({ transaction, onSave, onClose }) => 
                   onClick={() => setCategory(key as Category)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 text-xs font-medium transition-all ${
                     category === key
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      ? 'text-gray-700'
                       : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200 hover:bg-gray-100'
                   }`}
+                  style={category === key ? { borderColor: 'var(--primary)', background: 'var(--primary-light)' } : undefined}
                 >
                   <span className="text-xl">{meta.icon}</span>
                   <span className="text-center leading-tight">{meta.label}</span>
@@ -162,7 +164,8 @@ const TransactionModal: React.FC<Props> = ({ transaction, onSave, onClose }) => 
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md shadow-indigo-200 transition-all"
+              className="flex-1 py-3 rounded-xl text-white font-semibold shadow-md transition-all hover:opacity-90"
+              style={{ background: 'var(--primary)' }}
             >
               {transaction ? 'Cập nhật' : 'Thêm mới'}
             </button>
