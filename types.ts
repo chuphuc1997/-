@@ -1,5 +1,14 @@
 export type TransactionType = 'income' | 'expense';
 
+export type ThemeColor = 'indigo' | 'emerald' | 'rose' | 'amber' | 'violet' | 'sky';
+
+export interface UserProfile {
+  name: string;
+  avatar: string;
+  themeColor: ThemeColor;
+  monthlySalary: number;
+}
+
 export type ExpenseCategory =
   | 'food'
   | 'transport'
@@ -49,6 +58,18 @@ export interface SavingsGoal {
   color: string;
   createdAt: string;
   icon: string;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  category: Category;
+  description: string;
+  dayOfMonth: number;
+  active: boolean;
+  lastApplied?: string;
+  createdAt: string;
 }
 
 export type Page = 'dashboard' | 'transactions' | 'budget' | 'calendar' | 'reports' | 'goals';

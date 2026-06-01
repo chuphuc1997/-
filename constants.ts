@@ -1,4 +1,4 @@
-import { CategoryMeta, ExpenseCategory, IncomeCategory, Transaction, Budget, SavingsGoal } from './types';
+import { CategoryMeta, ExpenseCategory, IncomeCategory, Transaction, Budget, SavingsGoal, ThemeColor, UserProfile, RecurringTransaction } from './types';
 
 export const EXPENSE_CATEGORIES: Record<ExpenseCategory, CategoryMeta> = {
   food: { label: 'Ăn uống', icon: '🍜', color: '#f97316', bgColor: 'bg-orange-100', borderColor: 'border-orange-300', textColor: 'text-orange-700' },
@@ -97,3 +97,27 @@ export const formatShortVND = (amount: number): string => {
 
 export const GOAL_ICONS = ['🏍️','🚗','🏠','✈️','💻','📱','💍','🎓','🛡️','💰','🎁','🏖️','📸','🎹','⚽'];
 export const GOAL_COLORS = ['#3b82f6','#10b981','#f97316','#8b5cf6','#ec4899','#0ea5e9','#f59e0b','#14b8a6','#ef4444','#6366f1'];
+
+export const THEMES: Record<ThemeColor, { name: string; primary: string; secondary: string; light: string; icon: string }> = {
+  indigo: { name: 'Indigo', primary: '#4f46e5', secondary: '#7c3aed', light: '#eef2ff', icon: '💜' },
+  emerald: { name: 'Emerald', primary: '#059669', secondary: '#0d9488', light: '#ecfdf5', icon: '💚' },
+  rose: { name: 'Rose', primary: '#e11d48', secondary: '#db2777', light: '#fff1f2', icon: '🌹' },
+  amber: { name: 'Amber', primary: '#d97706', secondary: '#ea580c', light: '#fffbeb', icon: '🌻' },
+  violet: { name: 'Violet', primary: '#7c3aed', secondary: '#6d28d9', light: '#f5f3ff', icon: '🔮' },
+  sky: { name: 'Sky', primary: '#0284c7', secondary: '#0369a1', light: '#f0f9ff', icon: '🌊' },
+};
+
+export const AVATARS = ['😊','😎','🤓','🦊','🐼','🦁','🐨','🦄','🐯','🐸','🎃','👑','🌟','💎','🍀'];
+
+export const DEFAULT_PROFILE: UserProfile = {
+  name: 'Người dùng',
+  avatar: '😊',
+  themeColor: 'indigo',
+  monthlySalary: 0,
+};
+
+export const INITIAL_RECURRING: RecurringTransaction[] = [
+  { id: genId(), type: 'income', amount: 18000000, category: 'salary', description: 'Lương tháng', dayOfMonth: 1, active: true, createdAt: new Date().toISOString() },
+  { id: genId(), type: 'expense', amount: 3500000, category: 'housing', description: 'Tiền thuê nhà', dayOfMonth: 3, active: true, createdAt: new Date().toISOString() },
+  { id: genId(), type: 'expense', amount: 180000, category: 'utilities', description: 'Internet tháng', dayOfMonth: 5, active: true, createdAt: new Date().toISOString() },
+];
